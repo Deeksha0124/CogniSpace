@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% set title = "Profile" %}
+{% block content %}
+<section class="hero-card">
+    <p class="eyebrow">Profile</p>
+    <h1>{{ current_user["name"] }}</h1>
+    <p class="lead">Your personal dashboard settings and progress snapshot stay linked to your private account.</p>
+</section>
+
+<section class="feature-grid profile-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <p class="eyebrow">Account details</p>
+                <h3>Your information</h3>
+            </div>
+        </div>
+        <div class="profile-detail-list">
+            <div class="profile-detail-card">
+                <span>Email</span>
+                <strong class="break-anywhere">{{ current_user["email"] }}</strong>
+                <small>Primary login credential</small>
+            </div>
+            <div class="profile-detail-card">
+                <span>Phone</span>
+                <strong class="break-anywhere">{{ current_user["phone"] }}</strong>
+                <small>Secondary login credential</small>
+            </div>
+            <div class="profile-detail-card">
+                <span>Coins balance</span>
+                <strong>{{ stats["coin_balance"] }}</strong>
+                <small>Earned from journal entries and challenges</small>
+            </div>
+            <div class="profile-detail-card">
+                <span>Member since</span>
+                <strong>{{ current_user["created_at"][:10]|display_date }}</strong>
+                <small>Account creation date</small>
+            </div>
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <p class="eyebrow">Security</p>
+                <h3>Change password</h3>
+            </div>
+        </div>
+        <form method="post" action="{{ url_for('change_password') }}" class="stack-form">
+            <label for="current_password">Current password</label>
+            <input id="current_password" name="current_password" type="password" required>
+            
+            <label for="new_password">New password</label>
+            <input id="new_password" name="new_password" type="password" required>
+            
+            <small class="field-help" style="margin-bottom: 8px;">Must be 8+ chars and contain uppercase, lowercase, numbers, and special characters.</small>
+            <button type="submit">Update password</button>
+        </form>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <p class="eyebrow">Profile actions</p>
+                <h3>Manage your account</h3>
+            </div>
+        </div>
+        <div class="callout">
+            <p><strong>Delete profile:</strong> this permanently removes your account, journal entries, mood logs, sleep logs, and challenge history from this local app.</p>
+            <p>Type <strong>DELETE</strong> exactly, then submit.</p>
+        </div>
+        <form method="post" action="{{ url_for('delete_profile') }}" class="stack-form delete-form">
+            <label for="confirmation">Confirmation text</label>
+            <input id="confirmation" name="confirmation" type="text" placeholder="Type DELETE to confirm">
+            <button type="submit" class="danger-button">Delete my profile</button>
+        </form>
+    </article>
+</section>
+
+<section class="feature-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <p class="eyebrow">Activity totals</p>
+                <h3>Your personal data footprint</h3>
+            </div>
+        </div>
+        <ul class="insight-list">
+            <li>{{ stats["journal_entries"] }} journal entries analyzed by the AI engine.</li>
+            <li>{{ stats["mood_checkins"] }} mood check-ins captured across the day.</li>
+            <li>{{ stats["sleep_logs"] }} sleep logs saved for weekly analysis.</li>
+            <li>All of this data is stored per-user and only loaded after authentication.</li>
+        </ul>
+    </article>
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <p class="eyebrow">Privacy and design</p>
+                <h3>How your data is handled</h3>
+            </div>
+        </div>
+        <ul class="insight-list">
+            <li>Passwords are stored as hashes, not plain text.</li>
+            <li>Every journal entry, mood log, challenge, and sleep record is associated with your user ID.</li>
+            <li>The app only serves authenticated data from your own profile.</li>
+        </ul>
+    </article>
+</section>
+{% endblock %}

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ app_brand }}{% if title %} | {{ title }}{% endif %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Lato:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body data-page="{{ current_endpoint }}">
+    <div class="app-bg"></div>
+    <div class="page-shell">
+        <header class="site-header">
+            <div class="container header-row">
+                <a href="{{ url_for('dashboard') if current_user else url_for('login') }}" class="brand-lockup">
+                    <span class="brand-mark" aria-hidden="true">
+                        <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Outer glow circle -->
+                            <circle cx="19" cy="19" r="18" fill="url(#brandGrad)" opacity="0.15"/>
+                            <!-- Brain left lobe -->
+                            <path d="M19 10 C12 10 9 14 9 18 C9 22 11 25 14 26 C14 28 15 30 17 30 L19 30" stroke="url(#brandGrad)" stroke-width="2" stroke-linecap="round" fill="none"/>
+                            <!-- Brain right lobe -->
+                            <path d="M19 10 C26 10 29 14 29 18 C29 22 27 25 24 26 C24 28 23 30 21 30 L19 30" stroke="url(#brandGrad)" stroke-width="2" stroke-linecap="round" fill="none"/>
+                            <!-- Brain center divide -->
+                            <line x1="19" y1="10" x2="19" y2="30" stroke="url(#brandGrad)" stroke-width="1.5" stroke-dasharray="2 2" opacity="0.6"/>
+                            <!-- Pulse/heartbeat line across middle -->
+                            <polyline points="10,19 13,19 15,15 17,23 19,17 21,21 23,19 28,19" stroke="#e8916a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                            <defs>
+                                <linearGradient id="brandGrad" x1="0" y1="0" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+                                    <stop offset="0%" stop-color="#7fa6c9"/>
+                                    <stop offset="100%" stop-color="#9b7fc9"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </span>
+                    <div>
+                        <strong>{{ app_brand }}</strong>
+                        <small>{{ app_subtitle }}</small>
+                    </div>
+                </a>
+
+                <nav class="main-nav">
+                    {% if current_user %}
+                    <a href="{{ url_for('dashboard') }}" data-tour="nav-home">Home</a>
+                    <a href="{{ url_for('journal') }}" data-tour="nav-journal">Journal</a>
+                    <a href="{{ url_for('mood') }}" data-tour="nav-mood">Mood</a>
+                    <a href="{{ url_for('sleep') }}" data-tour="nav-sleep">Sleep</a>
+                    <a href="{{ url_for('challenges') }}" data-tour="nav-challenges">Challenges</a>
+                    <a href="{{ url_for('music') }}" data-tour="nav-music">Music</a>
+                    <a href="{{ url_for('profile') }}" data-tour="nav-profile">Profile</a>
+                    {% else %}
+                    <a href="{{ url_for('about') }}">About</a>
+                    <a href="{{ url_for('login') }}">Log in</a>
+                    <a href="{{ url_for('signup') }}">Sign up</a>
+                    {% endif %}
+                </nav>
+
+                {% if current_user %}
+                <form action="{{ url_for('logout') }}" method="post">
+                    <button type="submit" class="ghost-button">Sign out</button>
+                </form>
+                {% endif %}
+            </div>
+        </header>
+
+        <main class="container main-stage">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <section class="flash-stack">
+                    {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </section>
+                {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

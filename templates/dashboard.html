@@ -1,0 +1,494 @@
+{% extends "base.html" %}
+{% set title = "Dashboard" %}
+{% block content %}
+
+<style>
+/* ══════════════════════════════════════════════════════════════
+   DASHBOARD — Warm Bento Grid
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Subtle background texture ── */
+.dash-bg-shape {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    filter: blur(100px);
+    opacity: 0.3;
+    animation: shape-breathe ease-in-out infinite alternate;
+}
+@keyframes shape-breathe {
+    from { transform: scale(1); }
+    to   { transform: scale(1.08); }
+}
+.dash-bg-shape.s1 { width:500px;height:500px;top:-160px;left:-120px;background:radial-gradient(circle,#e8d5c4,transparent 70%);animation-duration:18s; }
+.dash-bg-shape.s2 { width:380px;height:380px;bottom:-80px;right:-80px;background:radial-gradient(circle,#d8cfe8,transparent 70%);animation-duration:22s; }
+.dash-bg-shape.s3 { display:none; }
+
+/* ── Welcome strip ── */
+.dash-welcome {
+    position: relative;
+    background: #fff;
+    border: 1px solid rgba(180,160,140,0.18);
+    border-radius: 26px;
+    padding: 36px 44px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    box-shadow: 0 2px 24px rgba(160,130,100,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+.dash-welcome::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(120deg, rgba(245,240,235,0.6) 0%, rgba(255,255,255,0) 60%);
+    pointer-events: none;
+}
+.dash-welcome-text { flex: 1; position: relative; z-index: 1; }
+.dash-welcome-text .greeting-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    color: #b07050;
+    font-weight: 700;
+    margin-bottom: 10px;
+    opacity: 0.8;
+}
+.dash-welcome-text h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.85rem;
+    font-weight: 700;
+    color: #1a1410;
+    margin: 0 0 8px;
+    line-height: 1.2;
+}
+.dash-welcome-text p {
+    color: #8a7a70;
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1.65;
+    max-width: 460px;
+}
+.dash-welcome-emoji {
+    font-size: 4rem;
+    line-height: 1;
+    animation: welcome-wave 4s ease-in-out infinite;
+    flex-shrink: 0;
+    opacity: 0.75;
+    position: relative; z-index: 1;
+}
+@keyframes welcome-wave {
+    0%,100% { transform: translateY(0) rotate(-3deg); }
+    50%      { transform: translateY(-8px) rotate(3deg); }
+}
+
+/* ── Bento Grid ── */
+.bento-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Base bento card */
+.bento-card {
+    border-radius: 22px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+    text-decoration: none;
+    color: inherit;
+}
+.bento-card:hover { transform: translateY(-4px); }
+
+/* ── All cards: unified neutral style ── */
+.bento-card.peach,
+.bento-card.lavender,
+.bento-card.sky,
+.bento-card.mint,
+.bento-card.gold,
+.bento-card.white {
+    background: #fff;
+    border: 1px solid rgba(180,165,150,0.16);
+    box-shadow: 0 2px 16px rgba(140,120,100,0.07);
+}
+.bento-card.peach:hover,
+.bento-card.lavender:hover,
+.bento-card.sky:hover,
+.bento-card.mint:hover,
+.bento-card.gold:hover,
+.bento-card.white:hover {
+    box-shadow: 0 10px 36px rgba(140,120,100,0.14);
+    border-color: rgba(180,165,150,0.28);
+}
+
+/* Subtle left-border accent per card type */
+.bento-card.peach  { border-left: 3px solid #d4956a; }
+.bento-card.lavender { border-left: 3px solid #a98bc8; }
+.bento-card.sky    { border-left: 3px solid #6aaad4; }
+.bento-card.mint   { border-left: 3px solid #6ab89a; }
+.bento-card.gold   { border-left: 3px solid #c8a050; }
+.bento-card.white  { border-left: 3px solid #c0b0a8; }
+
+/* ── Grid span helpers ── */
+.span-2 { grid-column: span 2; }
+.span-3 { grid-column: span 3; }
+
+/* ── Card internals ── */
+.bento-card .card-eyebrow {
+    font-size: 0.63rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 700;
+    color: #b0a098;
+    margin-bottom: 10px;
+}
+.bento-card .card-icon {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+    display: block;
+    opacity: 0.85;
+}
+.bento-card .card-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1c1410;
+    margin: 0 0 4px;
+}
+.bento-card .card-value {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1;
+    margin: 0 0 4px;
+    color: #1c1410;
+}
+.bento-card .card-sub {
+    font-size: 0.77rem;
+    color: #9a8e86;
+    line-height: 1.5;
+}
+.bento-card .card-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 14px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #b07050;
+    opacity: 0.7;
+    text-decoration: none;
+    transition: opacity 0.2s, gap 0.2s;
+}
+.bento-card:hover .card-cta { opacity: 1; gap: 8px; }
+
+/* ── Journal preview bento ── */
+.journal-preview {
+    background: #faf8f6;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-top: 12px;
+    border: 1px solid rgba(180,165,150,0.15);
+}
+.journal-preview .jp-meta {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+.jp-tag {
+    font-size: 0.67rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: rgba(180,160,140,0.14);
+    color: #806050;
+    font-weight: 600;
+}
+.jp-tag.emotion { background: rgba(170,155,190,0.14); color: #706090; }
+.journal-preview .jp-text {
+    font-size: 0.82rem;
+    color: #4a403a;
+    line-height: 1.55;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ── Mood mini slots ── */
+.mood-mini-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 14px;
+}
+.mood-mini-slot {
+    text-align: center;
+    padding: 10px 4px;
+    border-radius: 12px;
+    background: #faf8f6;
+    border: 1px solid rgba(180,165,150,0.15);
+}
+.mood-mini-slot .mms-time {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #b0a098;
+    margin-bottom: 4px;
+}
+.mood-mini-slot .mms-emoji { font-size: 1.3rem; display: block; }
+.mood-mini-slot .mms-label { font-size: 0.64rem; color: #7a7080; font-weight: 600; margin-top: 2px; }
+
+/* ── Challenge mini ── */
+.challenge-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #faf8f6;
+    border: 1px solid rgba(180,165,150,0.15);
+    margin-top: 10px;
+}
+.challenge-item .ci-icon { font-size: 1.1rem; flex-shrink: 0; opacity: 0.8; }
+.challenge-item .ci-name { font-size: 0.82rem; font-weight: 600; color: #2a2820; }
+.challenge-item .ci-coins { font-size: 0.71rem; color: #8a8070; margin-top: 1px; }
+
+/* ── Insight strip ── */
+.insight-strip {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+.insight-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.81rem;
+    color: #4a4038;
+    line-height: 1.55;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(180,165,150,0.12);
+}
+.insight-item:last-child { border-bottom: none; }
+.insight-item .ii-bullet {
+    width: 5px; height: 5px;
+    background: #c0a888;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 7px;
+}
+
+/* ── Empty states ── */
+.bento-empty {
+    font-size: 0.82rem;
+    opacity: 0.5;
+    text-align: center;
+    padding: 16px 0 4px;
+    line-height: 1.5;
+}
+</style>
+
+<!-- Decorative bg blobs -->
+<div class="dash-bg-shape s1" aria-hidden="true"></div>
+<div class="dash-bg-shape s2" aria-hidden="true"></div>
+<div class="dash-bg-shape s3" aria-hidden="true"></div>
+
+<!-- ── Welcome Banner ── -->
+<div class="dash-welcome">
+    <div class="dash-welcome-text">
+        <div class="greeting-tag">✦ {{ "Good morning" if True else "Hello" }} · Daily overview</div>
+        <h1>{{ payload["welcome_title"] }}</h1>
+        <p>{{ payload["welcome_copy"] }}</p>
+        {% if current_user["is_new"] %}
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+            {% for item in onboarding_paths %}
+            <a href="{{ url_for(item['endpoint']) }}" style="background:rgba(220,130,90,0.15);border:1px solid rgba(220,130,90,0.3);border-radius:12px;padding:8px 16px;text-decoration:none;color:#b05030;font-size:0.82rem;font-weight:600;">{{ item["title"] }} →</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    <div class="dash-welcome-emoji" aria-hidden="true">🌸</div>
+</div>
+
+<!-- ── Bento Grid ── -->
+<div class="bento-grid">
+
+    <!-- STAT: Coins -->
+    {% set coins_card = payload["summary_cards"][0] if payload["summary_cards"] else none %}
+    <div class="bento-card gold">
+        <span class="card-eyebrow">{{ coins_card["label"] if coins_card else "Coins" }}</span>
+        <span class="card-icon">🏅</span>
+        <div class="card-value">{{ coins_card["value"] if coins_card else "—" }}</div>
+        <div class="card-sub">{{ coins_card["copy"] if coins_card else "" }}</div>
+        <a href="{{ url_for('challenges') }}" class="card-cta" style="color:#a07000;">Earn more →</a>
+    </div>
+
+    <!-- STAT: Dominant mood -->
+    {% set mood_card = payload["summary_cards"][1] if payload["summary_cards"]|length > 1 else none %}
+    <div class="bento-card lavender">
+        <span class="card-eyebrow">{{ mood_card["label"] if mood_card else "Mood" }}</span>
+        <span class="card-icon">🎨</span>
+        <div class="card-value" style="font-size:1.5rem;">{{ mood_card["value"] if mood_card else "—" }}</div>
+        <div class="card-sub">{{ mood_card["copy"] if mood_card else "" }}</div>
+        <a href="{{ url_for('mood') }}" class="card-cta" style="color:#7040a0;">Track mood →</a>
+    </div>
+
+    <!-- STAT: Sleep -->
+    {% set sleep_card = payload["summary_cards"][3] if payload["summary_cards"]|length > 3 else none %}
+    <div class="bento-card sky">
+        <span class="card-eyebrow">{{ sleep_card["label"] if sleep_card else "Sleep" }}</span>
+        <span class="card-icon">💤</span>
+        <div class="card-value">{{ sleep_card["value"] if sleep_card else "—" }}</div>
+        <div class="card-sub">{{ sleep_card["copy"] if sleep_card else "" }}</div>
+        <a href="{{ url_for('sleep') }}" class="card-cta" style="color:#2060a0;">View sleep →</a>
+    </div>
+
+    <!-- JOURNAL: Latest entry (span 2) -->
+    <div class="bento-card peach span-2">
+        <span class="card-eyebrow">Latest journal entry</span>
+        <div class="card-title">📖 {{ payload["journal_section"]["title"] }}</div>
+        <div class="card-sub" style="margin-top:4px;">{{ payload["journal_section"]["copy"] }}</div>
+
+        {% set jentries = payload["journal_section"]["items"] %}
+        {% if jentries %}
+            {% set e = jentries[0] %}
+            <div class="journal-preview">
+                <div class="jp-meta">
+                    <span class="jp-tag">{{ e["entry_date"]|display_date }}</span>
+                    <span class="jp-tag emotion">{{ e["emotion"] }}</span>
+                </div>
+                <div class="jp-text">{{ e["journal_text"] }}</div>
+            </div>
+        {% else %}
+            <div class="bento-empty">✍️ No entries yet.<br>Write about your day to get started.</div>
+        {% endif %}
+        <a href="{{ url_for('journal') }}" class="card-cta" style="color:#c05030;" data-tour="dashboard-journal">Open journal →</a>
+    </div>
+
+    <!-- TODAY'S MOOD MAP -->
+    <div class="bento-card lavender">
+        <span class="card-eyebrow">Today's mood map</span>
+        <div class="card-title">🎭 Check-ins</div>
+        <div class="mood-mini-row">
+            {% for slot, entry in payload["today_mood"].items() %}
+            <div class="mood-mini-slot">
+                <div class="mms-time">{{ slot[:2] }}</div>
+                {% if entry %}
+                <span class="mms-emoji">{{ "😊" if entry["mood_label"] == "Happy" else ("😔" if entry["mood_label"] == "Sad" else ("😤" if entry["mood_label"] == "Stressed" else "🙂")) }}</span>
+                <div class="mms-label">{{ entry["mood_label"][:7] }}</div>
+                {% else %}
+                <span class="mms-emoji" style="opacity:0.3;">·</span>
+                <div class="mms-label" style="opacity:0.4;">—</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <a href="{{ url_for('mood') }}" class="card-cta" style="color:#7040a0;margin-top:12px;">Log mood →</a>
+    </div>
+
+    <!-- CHALLENGES -->
+    <div class="bento-card mint">
+        <span class="card-eyebrow">Daily challenges</span>
+        <div class="card-title">⚡ {{ payload["challenge_section"]["title"] }}</div>
+        <div class="card-sub" style="margin-top:4px;">{{ payload["challenge_section"]["copy"] }}</div>
+
+        {% set citems = payload["challenge_section"]["items"] %}
+        {% if citems %}
+            {% for item in citems[:2] %}
+            <div class="challenge-item">
+                <span class="ci-icon">✅</span>
+                <div>
+                    <div class="ci-name">{{ item["challenge_title"] }}</div>
+                    <div class="ci-coins">+{{ item["coins_awarded"] }} coins</div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="bento-empty">⚡ Try a calming challenge today.</div>
+        {% endif %}
+        <a href="{{ url_for('challenges') }}" class="card-cta" style="color:#308060;" data-tour="dashboard-challenges">View challenges →</a>
+    </div>
+
+    <!-- INSIGHTS (span 2) -->
+    <div class="bento-card white span-2">
+        <span class="card-eyebrow">Mood insights</span>
+        <div class="card-title">💡 {{ payload["insight_section"]["title"] }}</div>
+        <div class="card-sub" style="margin-top:4px;">{{ payload["insight_section"]["copy"] }}</div>
+
+        {% set iitems = payload["insight_section"]["items"] %}
+        {% if iitems %}
+        <div class="insight-strip">
+            {% for entry in iitems[:3] %}
+            <div class="insight-item">
+                <span class="ii-bullet"></span>
+                <div>
+                    <strong style="font-size:0.82rem;color:#2a2030;">{{ entry["title"] }}</strong>
+                    <div style="font-size:0.78rem;opacity:0.6;margin-top:2px;">{{ entry["copy"] }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+            <div class="bento-empty">Log a few moods to unlock insights.</div>
+        {% endif %}
+        <a href="{{ url_for('mood') }}" class="card-cta" style="color:#6030a0;" data-tour="dashboard-mood">Open mood tracker →</a>
+    </div>
+
+    <!-- TREND CHART -->
+    <div class="bento-card peach">
+        <span class="card-eyebrow">Mood trend</span>
+        <div class="card-title">📈 This week</div>
+        <div class="chart-wrap" style="margin-top:12px;">
+            <canvas id="dashboardTrendChart" height="130"></canvas>
+        </div>
+    </div>
+
+</div><!-- end bento-grid -->
+
+{% if show_tour %}
+<section class="tour-overlay">
+    <div class="tour-card guided-tour" data-tour-modal>
+        <p class="eyebrow">First-time guided tour</p>
+        <h2 data-tour-title>Welcome to {{ app_brand }}</h2>
+        <p class="lead" data-tour-copy>We'll quickly walk through the main features so you know exactly what each space is for.</p>
+        <div class="tour-progress">
+            <span data-tour-step>1</span>
+            <small data-tour-total>of 8</small>
+        </div>
+        <div class="tour-actions">
+            <button type="button" class="ghost-button" data-tour-prev disabled>Back</button>
+            <button type="button" data-tour-next>Next</button>
+        </div>
+        <form method="post" action="{{ url_for('complete_tour') }}" data-tour-finish hidden>
+            <button type="submit">Finish tour and start</button>
+        </form>
+    </div>
+</section>
+<script>
+window.firstTimeTour = [
+    { target: '[data-tour="nav-home"]',          title: 'Home',        copy: 'Your landing space — a quick overview of everything.' },
+    { target: '[data-tour="nav-journal"]',        title: 'Journal',     copy: 'Write or speak about your day and get emotion-aware AI feedback.' },
+    { target: '[data-tour="nav-mood"]',           title: 'Mood',        copy: 'Fill your monthly mood tracker and notice emotional patterns.' },
+    { target: '[data-tour="nav-sleep"]',          title: 'Sleep',       copy: 'Log bedtime, wake time, and quality to build your rest pattern.' },
+    { target: '[data-tour="nav-challenges"]',     title: 'Challenges',  copy: 'Short calming activities that award coins when you feel stressed.' },
+    { target: '[data-tour="nav-music"]',          title: 'Music',       copy: 'Upload calm songs or open our curated soothing recommendations.' },
+    { target: '[data-tour="nav-profile"]',        title: 'Profile',     copy: 'Review your account details, totals, or delete your profile.' },
+    { target: '[data-tour="dashboard-journal"]',  title: 'Quick cards', copy: 'Each card shows a snapshot and a link to dive deeper.' }
+];
+</script>
+{% endif %}
+
+<script>window.dashboardTrendData = {{ chart_payload|safe }};</script>
+{% endblock %}

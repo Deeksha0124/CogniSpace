@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+{% set title = "Mood Tracker" %}
+
+{% block content %}
+<style>
+.mood-page-bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: linear-gradient(145deg, #fce4ec 0%, #f3e5f5 38%, #e8eaf6 68%, #e0f7fa 100%);
+}
+.mood-petal { position: fixed; pointer-events: none; z-index: 0; opacity: 0.16; animation: psway ease-in-out infinite alternate; }
+@keyframes psway { from { transform: rotate(-7deg) scale(1); } to { transform: rotate(7deg) scale(1.06); } }
+
+/* ── Hero ── */
+.mood-hero { position: relative; z-index: 1; text-align: center; padding: 30px 20px 18px; }
+.mood-hero h1 { font-family: 'Playfair Display', serif; font-style: italic; font-size: 2.6rem; color: #5a2d4c; margin: 0 0 4px; }
+.mood-hero .msub { font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase; color: #b07090; margin-bottom: 8px; }
+.mood-hero .mlead { color: #8a5a70; font-size: 0.88rem; max-width: 400px; margin: 0 auto; line-height: 1.65; }
+
+/* ── Main layout: grid left, sidebar right ── */
+.mood-main { display: grid; grid-template-columns: 1fr 300px; gap: 20px; position: relative; z-index: 1; margin-bottom: 22px; }
+
+/* ── Grid tracker card ── */
+.grid-card {
+    background: rgba(255,255,255,0.95);
+    border-radius: 26px; border: 1.5px solid rgba(200,140,180,0.25);
+    box-shadow: 0 8px 40px rgba(180,100,150,0.14); padding: 28px; overflow-x: auto;
+}
+.grid-card .gc-title { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.35rem; color: #4a2040; text-align: center; margin: 0 0 18px; }
+.mood-grid { border-collapse: collapse; width: 100%; }
+.mood-grid th { font-size: 0.62rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #c090b0; padding: 0 2px 10px; text-align: center; width: 30px; }
+.mood-grid th.dcol { text-align: right; padding-right: 8px; width: 26px; }
+.mood-grid td.dnum { font-size: 0.66rem; color: #c0a0b8; text-align: right; padding-right: 7px; font-weight: 700; white-space: nowrap; }
+.mood-grid td { padding: 2px; }
+.mcell {
+    width: 28px; height: 28px;
+    border: 1.5px solid #d4a8c0;
+    border-radius: 5px; cursor: default;
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative;
+    background: #fff;
+}
+.mcell.filled { border-color: rgba(0,0,0,0.06); }
+.mcell.today  { outline: 2.5px solid #e07aaa; outline-offset: 1px; }
+.mcell:hover  { transform: scale(1.35); box-shadow: 0 4px 14px rgba(180,80,150,0.28); z-index: 10; border-radius: 6px; }
+.mcell.noday  { background: transparent !important; border: none !important; }
+/* Tooltip */
+.mcell[data-tip]:hover::after {
+    content: attr(data-tip); position: absolute; bottom: calc(100% + 5px); left: 50%;
+    transform: translateX(-50%); background: #3a1a30; color: #fff;
+    font-size: 0.65rem; white-space: nowrap; padding: 3px 8px; border-radius: 6px;
+    pointer-events: none; z-index: 20;
+}
+
+/* ── Sidebar ── */
+.mood-sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+.key-card {
+    background: rgba(255,255,255,0.95); border-radius: 22px;
+    border: 1.5px solid rgba(200,140,180,0.22); box-shadow: 0 6px 28px rgba(180,100,150,0.1); padding: 22px;
+}
+.key-card .kc-title { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1rem; color: #4a2040; margin: 0 0 14px; font-weight: 700; }
+.key-swatches { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.ks-item { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.ks-swatch { width: 34px; height: 34px; border-radius: 10px; border: 1.5px solid rgba(0,0,0,0.07); }
+.ks-lbl { font-size: 0.6rem; color: #7a5070; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; }
+
+/* ── Check-in form card ── */
+.form-card {
+    background: rgba(255,255,255,0.95); border-radius: 22px;
+    border: 1.5px solid rgba(200,140,180,0.22); box-shadow: 0 6px 28px rgba(180,100,150,0.1); padding: 22px;
+}
+.form-card .fc-title { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1rem; color: #4a2040; margin: 0 0 14px; }
+.form-card label { font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #b090b0; display: block; margin-bottom: 4px; margin-top: 10px; }
+.form-card input, .form-card select, .form-card textarea {
+    width: 100%; padding: 8px 12px; border-radius: 12px; font-size: 0.82rem;
+    border: 1.5px solid rgba(200,140,180,0.25); background: #fdf5f8; color: #3a1a30;
+    font-family: 'Lato', sans-serif; box-sizing: border-box;
+}
+.form-card textarea { resize: none; border-radius: 12px; }
+
+/* mood pills in form */
+.mpills { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 10px; }
+.mpill {
+    display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 18px;
+    font-size: 0.72rem; font-weight: 700; color: #3a1a2e; background: var(--pc);
+    border: 2px solid transparent; cursor: pointer; transition: transform .15s, box-shadow .15s; user-select: none;
+}
+.mpill input { display: none; }
+.mpill:hover { transform: translateY(-2px); box-shadow: 0 3px 10px rgba(0,0,0,0.14); }
+.mpill.sel { border-color: rgba(80,20,60,0.4); box-shadow: 0 2px 10px rgba(80,20,60,0.2); transform: scale(1.06); }
+.mpill-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(0,0,0,0.2); flex-shrink: 0; }
+.form-btns { display: flex; gap: 8px; margin-top: 12px; }
+.form-btns button { flex: 1; padding: 9px; font-size: 0.8rem; border-radius: 14px; }
+
+/* ── Analysis row ── */
+.analysis-row { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 20px; position: relative; z-index: 1; margin-bottom: 24px; }
+.analysis-card {
+    background: rgba(255,255,255,0.95); border-radius: 24px;
+    border: 1.5px solid rgba(200,140,180,0.22); box-shadow: 0 6px 28px rgba(180,100,150,0.1); padding: 26px;
+}
+.analysis-card h3 { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.1rem; color: #4a2040; margin: 0 0 16px; }
+.insight-card {
+    background: linear-gradient(145deg, #fce4ec, #f3e5f5); border-radius: 24px;
+    border: 1.5px solid rgba(200,140,180,0.25); box-shadow: 0 6px 28px rgba(180,100,150,0.12); padding: 26px;
+}
+.insight-card h3 { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.1rem; color: #4a2040; margin: 0 0 14px; }
+.ins-item { display: flex; gap: 10px; margin-bottom: 12px; }
+.ins-item .ii-ico { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+.ins-item .ii-txt { font-size: 0.82rem; color: #5a3050; line-height: 1.6; }
+.ins-item .ii-txt strong { display: block; font-size: 0.68rem; color: #a060a0; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1px; }
+.chart-note { margin-top: 12px; font-size: 0.8rem; color: #7a5070; line-height: 1.65; padding: 12px 14px; background: #fdf0f6; border-radius: 12px; }
+.reco { margin-top: 14px; background: rgba(255,255,255,0.7); border-radius: 14px; padding: 14px; font-size: 0.82rem; color: #5a3050; line-height: 1.7; border: 1px solid rgba(200,140,180,0.2); }
+.reco-tag { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 2px; color: #c080a0; font-weight: 700; margin-bottom: 5px; }
+</style>
+
+<!-- BG -->
+<div class="mood-page-bg"></div>
+<svg class="mood-petal" style="width:230px;top:-40px;left:-50px;animation-duration:10s;" viewBox="0 0 200 200">
+  <ellipse cx="100" cy="58" rx="27" ry="52" fill="#f48fb1" transform="rotate(0,100,100)"/>
+  <ellipse cx="100" cy="58" rx="27" ry="52" fill="#f06292" transform="rotate(60,100,100)"/>
+  <ellipse cx="100" cy="58" rx="27" ry="52" fill="#ec407a" transform="rotate(120,100,100)"/>
+  <ellipse cx="100" cy="58" rx="27" ry="52" fill="#f48fb1" transform="rotate(180,100,100)"/>
+  <ellipse cx="100" cy="58" rx="27" ry="52" fill="#f06292" transform="rotate(240,100,100)"/>
+  <ellipse cx="100" cy="58" rx="27" ry="52" fill="#ec407a" transform="rotate(300,100,100)"/>
+  <circle cx="100" cy="100" r="17" fill="#fff9c4"/>
+</svg>
+<svg class="mood-petal" style="width:190px;bottom:60px;right:-35px;animation-duration:13s;animation-delay:2s;" viewBox="0 0 200 200">
+  <ellipse cx="100" cy="56" rx="23" ry="46" fill="#ce93d8" transform="rotate(0,100,100)"/>
+  <ellipse cx="100" cy="56" rx="23" ry="46" fill="#ba68c8" transform="rotate(72,100,100)"/>
+  <ellipse cx="100" cy="56" rx="23" ry="46" fill="#ab47bc" transform="rotate(144,100,100)"/>
+  <ellipse cx="100" cy="56" rx="23" ry="46" fill="#ce93d8" transform="rotate(216,100,100)"/>
+  <ellipse cx="100" cy="56" rx="23" ry="46" fill="#ba68c8" transform="rotate(288,100,100)"/>
+  <circle cx="100" cy="100" r="15" fill="#fff9c4"/>
+</svg>
+
+<!-- Hero -->
+<div class="mood-hero">
+    <div class="msub">CogniSpace · Mood</div>
+    <h1>Mood Tracker</h1>
+    <p class="mlead">{{ mood_context["summary"]["weekly_story"] }}</p>
+</div>
+
+<!-- Main: Grid + Sidebar -->
+<div class="mood-main">
+
+    <!-- 31 × 12 Grid -->
+    <div class="grid-card">
+        <div class="gc-title" id="gridYearLabel"></div>
+        <table class="mood-grid" id="moodGridTable">
+            <thead>
+                <tr>
+                    <th class="dcol"></th>
+                    <th>J</th><th>F</th><th>M</th><th>A</th><th>M</th><th>J</th>
+                    <th>J</th><th>A</th><th>S</th><th>O</th><th>N</th><th>D</th>
+                </tr>
+            </thead>
+            <tbody id="gridBody"></tbody>
+        </table>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="mood-sidebar">
+
+        <!-- Check-in Form only -->
+        <div class="form-card">
+            <div class="fc-title">Log a mood ✦</div>
+            <form method="post" id="moodForm">
+                <input type="hidden" name="source_type" id="moodSourceType" value="text">
+                <label>Date</label>
+                <input id="entry_date" name="entry_date" type="date" value="{{ today_iso }}" required>
+                <label>Time of day</label>
+                <select id="time_slot" name="time_slot" required>
+                    {% for s in time_slots %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+                </select>
+                <label>Mood</label>
+                <div class="mpills" id="moodPills">
+                    {% for m in mood_options %}
+                    <label class="mpill" id="mpill-{{ m.key }}" style="--pc:{{ m.color }}">
+                        <input type="radio" name="mood_key" value="{{ m.key }}" {% if loop.first %}checked{% endif %} onchange="pickMood('{{ m.key }}')">
+                        <span class="mpill-dot"></span>{{ m.label }}
+                    </label>
+                    {% endfor %}
+                </div>
+                <label>Note (optional)</label>
+                <textarea id="note" name="note" rows="2" placeholder="What's on your mind?"></textarea>
+                <label>Language</label>
+                <select id="mood_language" name="input_language">
+                    <option value="en-US">English</option><option value="hi-IN">Hindi</option>
+                    <option value="ta-IN">Tamil</option><option value="te-IN">Telugu</option>
+                </select>
+                <div class="form-btns">
+                    <button type="button" class="mic-button" data-target="note" data-source-target="moodSourceType" data-language-target="mood_language">🎤</button>
+                    <button type="submit">Save mood ✓</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Analysis row -->
+<div class="analysis-row">
+    <div class="analysis-card">
+        <h3>This week's mood pattern</h3>
+        <canvas id="moodWeekChart" height="180"></canvas>
+        <div class="chart-note" id="chartNote">Loading analysis…</div>
+    </div>
+    <div class="insight-card">
+        <h3>What your mood says</h3>
+        <div id="insightsList"></div>
+        <div class="reco">
+            <div class="reco-tag">✦ Recommendation</div>
+            <div id="recoText"></div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ALL_ENTRIES  = {{ mood_entries | tojson }};
+const MOOD_OPTIONS = {{ mood_options | tojson }};
+const SLOTS        = ['Morning','Noon','Evening','Night'];
+const today        = new Date();
+const todayStr     = today.toISOString().slice(0,10);
+const thisYear     = today.getFullYear();
+
+document.getElementById('gridYearLabel').textContent = thisYear;
+
+/* color/label map */
+const moodMeta = {};
+MOOD_OPTIONS.forEach(m => { moodMeta[m.key] = { color: m.color, label: m.label, score: m.score }; });
+
+/* entry lookup: "YYYY-MM-DD" → dominant {color, label, key} */
+const dayEntry = {};
+ALL_ENTRIES.forEach(e => {
+    if (!e.entry_date) return;
+    const ds = e.entry_date.slice(0,10);
+    if (!dayEntry[ds]) dayEntry[ds] = {};
+    dayEntry[ds][e.mood_key] = (dayEntry[ds][e.mood_key] || 0) + 1;
+});
+const dominantFor = ds => {
+    if (!dayEntry[ds]) return null;
+    const best = Object.entries(dayEntry[ds]).sort((a,b)=>b[1]-a[1])[0][0];
+    return moodMeta[best] ? { ...moodMeta[best], key: best } : null;
+};
+
+/* ── Build 31×12 grid ── */
+(function buildGrid() {
+    const tbody = document.getElementById('gridBody');
+    tbody.innerHTML = '';
+    for (let day = 1; day <= 31; day++) {
+        const tr = document.createElement('tr');
+        const tdN = document.createElement('td');
+        tdN.className = 'dnum'; tdN.textContent = day; tr.appendChild(tdN);
+        for (let mo = 1; mo <= 12; mo++) {
+            const td = document.createElement('td');
+            const maxDay = new Date(thisYear, mo, 0).getDate();
+            const cell = document.createElement('div');
+            if (day > maxDay) {
+                cell.className = 'mcell noday';
+            } else {
+                cell.className = 'mcell';
+                const ds = `${thisYear}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                const dom = dominantFor(ds);
+                if (dom) {
+                    cell.style.background = dom.color;
+                    cell.classList.add('filled');
+                    cell.setAttribute('data-tip', dom.label);
+                }
+                if (ds === todayStr) cell.classList.add('today');
+            }
+            td.appendChild(cell); tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+    }
+})();
+
+/* ── Pill selector ── */
+function pickMood(key) {
+    document.querySelectorAll('.mpill').forEach(p => p.classList.remove('sel'));
+    const el = document.getElementById('mpill-' + key);
+    if (el) el.classList.add('sel');
+}
+const fc = document.querySelector('.mpill input:checked');
+if (fc) pickMood(fc.value);
+
+/* ── Weekly chart + insights ── */
+(function buildAnalysis() {
+    const days7 = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(today); d.setDate(d.getDate()-i);
+        days7.push(d.toISOString().slice(0,10));
+    }
+    const moodCounts = {}; MOOD_OPTIONS.forEach(m => { moodCounts[m.key] = 0; });
+    const slotScores = { Morning:[], Noon:[], Evening:[], Night:[] };
+    ALL_ENTRIES.forEach(e => {
+        if (!e.entry_date) return;
+        const ds = e.entry_date.slice(0,10);
+        if (days7.includes(ds)) {
+            moodCounts[e.mood_key] = (moodCounts[e.mood_key]||0) + 1;
+            if (slotScores[e.time_slot]) slotScores[e.time_slot].push(e.mood_score || 3);
+        }
+    });
+    const total = Object.values(moodCounts).reduce((a,b)=>a+b,0);
+    const labels = MOOD_OPTIONS.map(m=>m.label);
+    const counts = MOOD_OPTIONS.map(m=>moodCounts[m.key]);
+    const colors = MOOD_OPTIONS.map(m=>m.color);
+
+    new Chart(document.getElementById('moodWeekChart').getContext('2d'), {
+        type: 'bar',
+        data: { labels, datasets: [{ data: counts, backgroundColor: colors, borderRadius: 9, borderSkipped: false }] },
+        options: {
+            responsive: true, plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false }, ticks: { font: { family:'Lato', size:10 }, color:'#a080a0' } },
+                y: { beginAtZero: true, grid: { color:'rgba(200,150,200,0.1)' }, ticks: { stepSize:1, font:{ family:'Lato', size:10 }, color:'#a080a0' } }
+            }
+        }
+    });
+
+    const avgSlot = {};
+    Object.entries(slotScores).forEach(([s,arr])=>{ avgSlot[s] = arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; });
+    const sortedSlots = Object.entries(avgSlot).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]);
+    const bestSlot  = sortedSlots[0];
+    const worstSlot = sortedSlots[sortedSlots.length-1];
+    const topKey    = total>0 ? Object.entries(moodCounts).sort((a,b)=>b[1]-a[1])[0][0] : null;
+    const positiveKeys = new Set(['happy','calm','excited','motivated','grateful']);
+    const posCount  = MOOD_OPTIONS.filter(m=>positiveKeys.has(m.key)).reduce((s,m)=>s+moodCounts[m.key],0);
+    const ratio     = total>0 ? Math.round(posCount/total*100) : 0;
+
+    document.getElementById('chartNote').innerHTML = total===0
+        ? '✦ No check-ins logged this week. Save your first mood to see your pattern!'
+        : `You logged <strong>${total}</strong> mood${total>1?'s':''} this week. ` +
+          `Most felt: <strong>${topKey ? moodMeta[topKey].label : '—'}</strong>.` +
+          (bestSlot ? ` Your <strong>${bestSlot[0]}</strong> feels most positive.` : '');
+
+    const insights = [];
+    if (total===0) {
+        insights.push({ico:'💭',t:'Get started',x:'Log your first mood — even one check-in a day builds powerful self-awareness.'});
+    } else {
+        insights.push({ico:'📊',t:'Mood balance',x:`${ratio}% of your check-ins this week were positive or calm.`});
+        if (bestSlot)  insights.push({ico:'🌟',t:'Your best time',x:`${bestSlot[0]} is when you feel your best — protect that window!`});
+        if (worstSlot && worstSlot[0]!==bestSlot?.[0]) insights.push({ico:'🌧️',t:'Needs care',x:`${worstSlot[0]} tends to feel heavier. Be extra gentle with yourself then.`});
+    }
+    document.getElementById('insightsList').innerHTML = insights.map(i=>`
+        <div class="ins-item"><span class="ii-ico">${i.ico}</span>
+        <div class="ii-txt"><strong>${i.t}</strong>${i.x}</div></div>`).join('');
+
+    let reco = 'Keep logging — even a 10-second check-in each day builds clarity over time.';
+    if (total>0) {
+        if (ratio>=70) reco='Your mood is mostly positive! Keep your current routine — sleep, movement, and connection are clearly helping.';
+        else if (ratio>=40) reco='A balanced mix this week. Try a 5-minute breathing or journaling session during your heavier time slots.';
+        else reco='This week felt heavy. Start small — a short walk or one kind thought about yourself can gently shift the day.';
+        if (bestSlot) reco += ` Your ${bestSlot[0]} energy is your superpower — schedule important things then.`;
+    }
+    document.getElementById('recoText').textContent = reco;
+})();
+</script>
+{% endblock %}

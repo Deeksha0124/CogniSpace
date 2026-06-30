@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% set title = "Journal" %}
+{% block content %}
+<section class="hero-card">
+    <p class="eyebrow">AI journal lab</p>
+    <h1>Reflect in text or voice, in the language that feels natural</h1>
+    <p class="lead">The AI model interprets mood, emotional tone, and life themes, then returns English insights that are meant to feel clear and supportive.</p>
+    <div class="callout subtle">
+        <p><strong>What this tab does:</strong> Write a journal entry, speak it aloud, and the app will turn it into emotion, theme, and suggestion cards that are easier to understand than raw text.</p>
+    </div>
+</section>
+
+<section class="feature-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <p class="eyebrow">New reflection</p>
+                <h3>Add a journal entry</h3>
+            </div>
+        </div>
+        <form method="post" class="stack-form">
+            <input type="hidden" name="source_type" id="journalSourceType" value="text">
+
+            <label for="entry_date">Date</label>
+            <input id="entry_date" name="entry_date" type="date" value="{{ today_iso }}" required>
+
+            <label for="input_language">Input language</label>
+            <select id="input_language" name="input_language">
+                <option value="en-US">English</option>
+                <option value="hi-IN">Hindi</option>
+                <option value="bn-IN">Bengali</option>
+                <option value="ta-IN">Tamil</option>
+                <option value="te-IN">Telugu</option>
+                <option value="es-ES">Spanish</option>
+                <option value="fr-FR">French</option>
+                <option value="de-DE">German</option>
+            </select>
+
+            <label for="journal_text">Journal text</label>
+            <textarea id="journal_text" name="journal_text" rows="9" required placeholder="Write or dictate your reflection here."></textarea>
+
+            <div class="inline-actions">
+                <button type="button" class="mic-button" data-target="journal_text" data-source-target="journalSourceType" data-language-target="input_language">Start voice input</button>
+                <button type="submit">Analyze reflection</button>
+            </div>
+        </form>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <p class="eyebrow">Latest model output</p>
+                <h3>What the AI noticed most recently</h3>
+            </div>
+        </div>
+        {% if latest_entry %}
+        <div class="summary-grid compact-grid">
+            <div class="summary-card">
+                <span>Emotion</span>
+                <strong>{{ latest_entry["emotion"] }}</strong>
+                <small>confidence-driven label</small>
+            </div>
+            <div class="summary-card">
+                <span>Sentiment</span>
+                <strong>{{ latest_entry["sentiment"] }}</strong>
+                <small>English-only output</small>
+            </div>
+            <div class="summary-card">
+                <span>Stress index</span>
+                <strong>{{ latest_entry["stress_index"] }}</strong>
+                <small>scaled supportive indicator</small>
+            </div>
+        </div>
+        <div class="callout">
+            <p><strong>Recommendation:</strong> {{ latest_entry["recommendation"] }}</p>
+            <p><strong>Forecast:</strong> {{ latest_entry["forecast"] }}</p>
+        </div>
+        {% else %}
+        <div class="empty-state">Your first analyzed reflection will appear here.</div>
+        {% endif %}
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <div>
+            <p class="eyebrow">History</p>
+            <h3>Past reflections</h3>
+        </div>
+    </div>
+    <div class="feed-list">
+        {% for entry in entries %}
+        <article class="feed-card">
+            <div class="badge-row">
+                <span class="badge">{{ entry["entry_date"]|display_date }}</span>
+                <span class="badge soft">{{ entry["emotion"] }}</span>
+                <span class="badge soft">{{ entry["sentiment"] }}</span>
+            </div>
+            <p>{{ entry["journal_text"] }}</p>
+            <small>{{ entry["forecast"] }}</small>
+        </article>
+        {% else %}
+        <div class="empty-state">Add your first reflection to start building a pattern history.</div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

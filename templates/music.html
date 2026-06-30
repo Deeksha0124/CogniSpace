@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% set title = "Music" %}
+{% block content %}
+<section class="hero-card">
+    <p class="eyebrow">Soothing music</p>
+    <h1>Warm playlists for focus, rest, meditation, and gentle movement</h1>
+    <p class="lead">Upload your own calm songs or open a carefully chosen recommendation for sleep, breathing, and soft focus.</p>
+    <div class="callout subtle">
+        <p><strong>What this tab does:</strong> It gives you two paths: local audio from your device and calm external recommendations chosen for ambient, breathing, and sleep-friendly listening instead of pop-heavy tracks.</p>
+    </div>
+</section>
+
+<section class="feature-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <p class="eyebrow">Your own music</p>
+                <h3>Upload calm songs from your device</h3>
+            </div>
+        </div>
+        <input id="localAudioInput" type="file" accept="audio/*" multiple>
+        <div id="localTrackList" class="track-preview"></div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <p class="eyebrow">Suggested calm listening</p>
+                <h3>Carefully chosen soft recommendations</h3>
+            </div>
+        </div>
+        <div class="playlist-grid">
+            {% for playlist in playlists %}
+            <article class="playlist-card external-card">
+                <p class="eyebrow">{{ playlist["kind"] }}</p>
+                <h3>{{ playlist["title"] }}</h3>
+                <p>{{ playlist["copy"] }}</p>
+                <small>{{ playlist["source"] }}</small>
+                <a class="soft-link" href="{{ playlist['url'] }}" target="_blank" rel="noopener noreferrer">Open suggestion</a>
+            </article>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+
+<section class="player-bar">
+    <div>
+        <strong id="playerTrackTitle">No playlist playing</strong>
+        <small id="playerTrackMeta">Choose local music to begin.</small>
+    </div>
+    <audio id="globalAudioPlayer" controls></audio>
+</section>
+{% endblock %}

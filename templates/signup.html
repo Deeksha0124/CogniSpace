@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% set title = "Sign up" %}
+{% block content %}
+<section class="auth-shell">
+    <div class="auth-copy">
+        <p class="eyebrow">Your personal wellness companion</p>
+        <h1>Build your space in {{ app_brand }}</h1>
+        <p class="lead">Track emotions, habits, mood, and sleep in one calm place. Your data stays isolated to your account and your insights stay in English for clarity.</p>
+    </div>
+
+    <div class="auth-card">
+        <h2>Create account</h2>
+        <p>We will create a private profile so your check-ins, sleep trends, and calm challenges stay yours.</p>
+        <form method="post" class="stack-form">
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" required>
+
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" required>
+
+            <label for="phone">Phone number</label>
+            <input id="phone" name="phone" type="tel" required>
+
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" required>
+            <small class="field-help">Use 8+ characters with lowercase, uppercase, number, and special character.</small>
+
+            <button type="submit">Create my account</button>
+        </form>
+        <p class="tiny-copy">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+    </div>
+</section>
+{% endblock %}

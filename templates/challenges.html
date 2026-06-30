@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% set title = "Daily Challenges" %}
+{% block content %}
+<section class="hero-card">
+    <p class="eyebrow">Daily challenges</p>
+    <h1>Gentle mini games for stressed moments, not a loud gaming page</h1>
+    <p class="lead">Each journal entry adds 5 coins. Each completed challenge adds 10 coins. Once you reach 20 coins, you can unlock a simple weekly mood insight.</p>
+    <div class="callout subtle">
+        <p><strong>What this tab does:</strong> Gives you quick mind-reset activities that work on both laptop and phone, while keeping the overall feel calm and easy to demo.</p>
+    </div>
+</section>
+
+<section class="summary-grid">
+    <article class="summary-card">
+        <span>Coin balance</span>
+        <strong>{{ challenges_context["coin_balance"] }}</strong>
+        <small>journal + activities</small>
+    </article>
+    <article class="summary-card">
+        <span>Unlock progress</span>
+        <strong>{{ challenges_context["progress_to_unlock"] }}%</strong>
+        <small>toward weekly mood insight</small>
+    </article>
+    <article class="summary-card">
+        <span>How coins work</span>
+        <strong>+5 / +10</strong>
+        <small>journal entry or challenge completion</small>
+    </article>
+</section>
+
+<section class="feature-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <p class="eyebrow">Breathing Bloom</p>
+                <h3>Animated breathing guide</h3>
+            </div>
+        </div>
+        <div class="breathing-zone">
+            <div class="breathing-orb" id="breathingOrb"></div>
+            <p id="breathingText">Press start, inhale, then exhale slowly.</p>
+        </div>
+        <div class="inline-actions">
+            <button type="button" id="startBreathing">Start breathing</button>
+            <form method="post">
+                <input type="hidden" name="action" value="complete_challenge">
+                <input type="hidden" name="challenge_key" value="breathing">
+                <button type="submit" id="claimBreathing" disabled>Claim 10 coins</button>
+            </form>
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <p class="eyebrow">Reflection Prompt</p>
+                <h3>One gentle question</h3>
+            </div>
+        </div>
+        <form method="post" class="stack-form">
+            <input type="hidden" name="action" value="complete_challenge">
+            <input type="hidden" name="challenge_key" value="reflection">
+            <label>{{ challenges_context["reflection_prompt"] }}</label>
+            <textarea name="notes" rows="4" required placeholder="Write a short answer here."></textarea>
+            <button type="submit">Save reflection + 10 coins</button>
+        </form>
+    </article>
+</section>
+
+<section class="feature-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <p class="eyebrow">Memory Lights</p>
+                <h3>Repeat the color order</h3>
+            </div>
+        </div>
+        <div class="memory-grid" id="memoryGrid">
+            <button type="button" class="memory-pad" data-pad="sun"></button>
+            <button type="button" class="memory-pad" data-pad="sky"></button>
+            <button type="button" class="memory-pad" data-pad="leaf"></button>
+            <button type="button" class="memory-pad" data-pad="rose"></button>
+        </div>
+        <p id="memoryStatus">Press play to watch the short sequence.</p>
+        <div class="inline-actions">
+            <button type="button" id="startMemory">Play sequence</button>
+            <form method="post">
+                <input type="hidden" name="action" value="complete_challenge">
+                <input type="hidden" name="challenge_key" value="memory">
+                <button type="submit" id="claimMemory" disabled>Claim 10 coins</button>
+            </form>
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <p class="eyebrow">Pattern Spark</p>
+                <h3>Finish a tiny number pattern</h3>
+            </div>
+        </div>
+        <form method="post" class="stack-form challenge-answer-form" data-answer="16" data-claim="claimPattern">
+            <input type="hidden" name="action" value="complete_challenge">
+            <input type="hidden" name="challenge_key" value="pattern">
+            <label>4, 7, 10, 13, ?</label>
+            <input type="number" class="challenge-answer" placeholder="Next number">
+            <small class="field-help">Answer correctly to enable the claim button.</small>
+            <button type="submit" id="claimPattern" disabled>Claim 10 coins</button>
+        </form>
+    </article>
+</section>
+
+<section class="feature-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <p class="eyebrow">Focus Tap</p>
+                <h3>Catch 12 drifting dots</h3>
+            </div>
+        </div>
+        <div class="focus-zone" id="focusZone"></div>
+        <p id="focusStatus">Tap the floating dots until you reach 12.</p>
+        <form method="post">
+            <input type="hidden" name="action" value="complete_challenge">
+            <input type="hidden" name="challenge_key" value="focus">
+            <button type="submit" id="claimFocus" disabled>Claim 10 coins</button>
+        </form>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <div>
+                <p class="eyebrow">Word Garden</p>
+                <h3>Unscramble a calm word</h3>
+            </div>
+        </div>
+        <form method="post" class="stack-form challenge-answer-form" data-answer="BREATHE" data-claim="claimWord">
+            <input type="hidden" name="action" value="complete_challenge">
+            <input type="hidden" name="challenge_key" value="word">
+            <label>Unscramble: HAETBER</label>
+            <input type="text" class="challenge-answer" placeholder="Type the word">
+            <small class="field-help">Use capital or small letters, both will work.</small>
+            <button type="submit" id="claimWord" disabled>Claim 10 coins</button>
+        </form>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <div>
+            <p class="eyebrow">Weekly insight</p>
+            <h3>Unlock with 20 coins</h3>
+        </div>
+    </div>
+    {% if challenges_context["coin_balance"] >= 20 %}
+        {% if challenges_context["insight_unlocked"] %}
+        <div class="callout">
+            <p><strong>Most frequent emotion:</strong> {{ challenges_context["weekly_insight"]["emotion"] }}</p>
+            <p><strong>General suggestion:</strong> {{ challenges_context["weekly_insight"]["suggestion"] }}</p>
+            <p><strong>Mood hint:</strong> {{ challenges_context["weekly_insight"]["mood_hint"] }}</p>
+        </div>
+        {% else %}
+        <form method="post">
+            <input type="hidden" name="action" value="unlock_weekly_insight">
+            <button type="submit">Unlock Weekly Mood Insight</button>
+        </form>
+        {% endif %}
+    {% else %}
+    <div class="progress-rail">
+        <div class="progress-fill" style="width: {{ challenges_context['progress_to_unlock'] }}%"></div>
+    </div>
+    <small class="field-help">Keep journaling or finish a few challenges to reach 20 coins.</small>
+    {% endif %}
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <div>
+            <p class="eyebrow">Recent calm wins</p>
+            <h3>Challenge history</h3>
+        </div>
+    </div>
+    <div class="feed-list">
+        {% for item in challenges_context["challenge_logs"] %}
+        <article class="feed-card">
+            <div class="badge-row">
+                <span class="badge">{{ item["challenge_title"] }}</span>
+                <span class="badge soft">+{{ item["coins_awarded"] }} coins</span>
+            </div>
+            <p>{{ item["created_at"][:10]|display_date }}</p>
+            <small>{{ item["notes"] or "Completed without extra notes." }}</small>
+        </article>
+        {% else %}
+        <div class="empty-state">Your completed challenges will appear here.</div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

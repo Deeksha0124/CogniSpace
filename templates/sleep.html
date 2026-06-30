@@ -1,0 +1,981 @@
+{% extends "base.html" %}
+{% set title = "Sleep Tracker" %}
+{% block content %}
+
+<style>
+/* ── Sleep Page Specific Styles ─────────────────────────────────────────── */
+.sleep-hero {
+    position: relative;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+    border-radius: 28px;
+    padding: 48px 40px;
+    color: #fff;
+    overflow: hidden;
+    margin-bottom: 28px;
+}
+
+.sleep-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(100, 160, 255, 0.15) 0%, transparent 70%);
+}
+
+.sleep-hero .stars {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.star {
+    position: absolute;
+    background: #fff;
+    border-radius: 50%;
+    animation: twinkle 3s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.3); }
+}
+
+.sleep-hero h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin: 0 0 8px;
+    color: #fff;
+    font-family: 'Outfit', sans-serif;
+}
+
+.sleep-hero .lead {
+    color: rgba(255,255,255,0.7);
+    font-size: 1rem;
+    margin: 0;
+    max-width: 540px;
+}
+
+.moon-icon {
+    position: absolute;
+    right: 48px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 5rem;
+    opacity: 0.9;
+    filter: drop-shadow(0 0 20px rgba(255, 220, 100, 0.6));
+    animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(-50%) rotate(-5deg); }
+    50% { transform: translateY(calc(-50% - 10px)) rotate(5deg); }
+}
+
+/* Stats Row */
+.sleep-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
+    border: 1px solid rgba(100, 130, 200, 0.2);
+    border-radius: 20px;
+    padding: 20px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 20px 20px 0 0;
+}
+
+.stat-card .stat-icon { font-size: 1.6rem; margin-bottom: 4px; }
+.stat-card .stat-value { font-size: 1.8rem; font-weight: 700; color: #2d3a5c; font-family: 'Outfit', sans-serif; }
+.stat-card .stat-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-card .stat-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+/* Two column layout */
+.sleep-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 28px;
+}
+
+/* Clock Picker Panel */
+.clock-panel {
+    background: linear-gradient(160deg, #0d1b3e 0%, #112244 50%, #0a1628 100%);
+    border-radius: 24px;
+    padding: 32px;
+    color: #fff;
+    transition: background 0.6s ease;
+}
+
+.clock-panel.wake-mode {
+    background: linear-gradient(160deg, #2d1a00 0%, #3d2200 50%, #4a2800 100%);
+}
+
+.clock-panel h3 {
+    color: #fff;
+    margin-bottom: 24px;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
+}
+
+.clock-panel .eyebrow {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.clock-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.clock-tab {
+    flex: 1;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.clock-tab.active {
+    background: rgba(100, 160, 255, 0.25);
+    border-color: rgba(100, 160, 255, 0.5);
+    color: #fff;
+}
+
+.clock-panel.wake-mode .clock-tab.active {
+    background: rgba(255, 180, 60, 0.3);
+    border-color: rgba(255, 180, 60, 0.6);
+    color: #ffe0a0;
+}
+
+.clock-face-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+/* ── Fixed larger clock ── */
+.clock-face {
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    border: 2px solid rgba(100,140,255,0.3);
+    background: radial-gradient(circle at 40% 40%, rgba(30,50,110,0.95) 0%, rgba(8,18,55,1) 100%);
+    position: relative;
+    cursor: pointer;
+    box-shadow: 0 0 50px rgba(80,120,255,0.18), inset 0 0 60px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+    transition: border-color 0.5s, background 0.5s, box-shadow 0.5s;
+}
+
+.clock-face.wake-mode {
+    border-color: rgba(255,180,60,0.4);
+    background: radial-gradient(circle at 40% 40%, rgba(80,45,0,0.95) 0%, rgba(40,20,0,1) 100%);
+    box-shadow: 0 0 50px rgba(255,160,30,0.2), inset 0 0 60px rgba(0,0,0,0.4);
+}
+
+.clock-face .clock-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.clock-time-display {
+    font-size: 2.2rem;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    color: #fff;
+    line-height: 1;
+}
+
+.clock-ampm-display {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 2px;
+    margin-top: 6px;
+}
+
+/* Ticks — sized for 260px face: transform-origin = 1px + (130-8) = 122px */
+.clock-tick {
+    position: absolute;
+    width: 2px;
+    height: 8px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 2px;
+    top: 8px;
+    left: calc(50% - 1px);
+    transform-origin: 1px 122px;
+    transition: background 0.4s;
+}
+
+.clock-face.wake-mode .clock-tick {
+    background: rgba(255,200,80,0.25);
+}
+
+.clock-tick.major {
+    height: 16px;
+    width: 3px;
+    background: rgba(255,255,255,0.6);
+    top: 6px;
+    transform-origin: 1.5px 124px;
+}
+
+.clock-face.wake-mode .clock-tick.major {
+    background: rgba(255,200,80,0.7);
+}
+
+/* Hour hand — sized for 260px (half=130, hand=72px, so origin at 72px from tip) */
+.clock-hour-hand {
+    position: absolute;
+    width: 5px;
+    height: 76px;
+    background: linear-gradient(180deg, #a0b4ff, #667eea);
+    border-radius: 5px;
+    bottom: 50%;
+    left: calc(50% - 2.5px);
+    transform-origin: 2.5px 76px;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.5s, box-shadow 0.5s;
+    box-shadow: 0 0 10px rgba(100,140,255,0.7);
+}
+
+.clock-face.wake-mode .clock-hour-hand {
+    background: linear-gradient(180deg, #ffe080, #ff9a00);
+    box-shadow: 0 0 10px rgba(255,160,0,0.8);
+}
+
+/* Minute hand — height=98px for 260px face */
+.clock-minute-hand {
+    position: absolute;
+    width: 3px;
+    height: 98px;
+    background: linear-gradient(180deg, #fff, rgba(255,255,255,0.75));
+    border-radius: 4px;
+    bottom: 50%;
+    left: calc(50% - 1.5px);
+    transform-origin: 1.5px 98px;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.5s;
+}
+
+.clock-face.wake-mode .clock-minute-hand {
+    background: linear-gradient(180deg, #fff0c0, rgba(255,220,100,0.8));
+}
+
+.clock-dot {
+    position: absolute;
+    width: 12px; height: 12px;
+    background: #fff;
+    border-radius: 50%;
+    top: calc(50% - 6px);
+    left: calc(50% - 6px);
+    z-index: 2;
+    transition: background 0.5s;
+}
+
+.clock-face.wake-mode .clock-dot {
+    background: #ffdd80;
+    box-shadow: 0 0 8px rgba(255,200,0,0.8);
+}
+
+.clock-hour-nums {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+}
+
+/* Numbers: larger, more visible — positioned via JS pixel math */
+.clock-num {
+    position: absolute;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.82);
+    width: 24px; height: 24px;
+    text-align: center;
+    line-height: 24px;
+    transition: color 0.4s;
+    pointer-events: none;
+    user-select: none;
+}
+
+.clock-face.wake-mode .clock-num {
+    color: rgba(255,210,100,0.85);
+}
+
+.time-sliders {
+    width: 100%;
+}
+
+.slider-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.slider-row label {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.5);
+    width: 42px;
+    flex-shrink: 0;
+    letter-spacing: 1px;
+}
+
+.slider-row input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 99px;
+    background: rgba(255,255,255,0.15);
+    outline: none;
+    cursor: pointer;
+}
+
+.slider-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(102,126,234,0.6);
+    transition: background 0.4s;
+}
+
+.clock-panel.wake-mode .slider-row input[type=range]::-webkit-slider-thumb {
+    background: linear-gradient(135deg, #ffb830, #ff6f00);
+    box-shadow: 0 2px 8px rgba(255,140,0,0.6);
+}
+
+.slider-row .val-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
+    width: 28px;
+    text-align: right;
+}
+
+.ampm-toggle {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 4px;
+}
+
+.ampm-btn {
+    padding: 6px 18px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    font-size: 0.82rem;
+    transition: all 0.2s;
+}
+
+.ampm-btn.active {
+    background: rgba(102,126,234,0.35);
+    border-color: rgba(102,126,234,0.6);
+    color: #fff;
+}
+
+.clock-panel.wake-mode .ampm-btn.active {
+    background: rgba(255,165,30,0.4);
+    border-color: rgba(255,165,30,0.7);
+    color: #ffe090;
+}
+
+/* ── Sleep-theme background decorations ── */
+.sleep-bg-decor {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.sleep-bg-decor::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 60% 40% at 15% 20%, rgba(30,50,120,0.18) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 35% at 85% 75%, rgba(60,20,100,0.12) 0%, transparent 70%);
+}
+
+.zzz-float {
+    position: absolute;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    color: rgba(120,150,255,0.08);
+    user-select: none;
+    animation: zzz-drift linear infinite;
+}
+
+@keyframes zzz-drift {
+    0%   { transform: translateY(0) rotate(-10deg); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 0.6; }
+    100% { transform: translateY(-120px) rotate(10deg); opacity: 0; }
+}
+
+.moon-crescent-bg {
+    position: fixed;
+    bottom: -60px;
+    right: -60px;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    background: transparent;
+    border: 40px solid rgba(100,130,255,0.05);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.star-bg {
+    position: fixed;
+    background: #fff;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    animation: twinkle-bg 4s ease-in-out infinite;
+}
+
+@keyframes twinkle-bg {
+    0%, 100% { opacity: 0.06; }
+    50% { opacity: 0.18; }
+}
+
+/* Log Form Panel */
+.log-panel {
+    background: #fff;
+    border-radius: 24px;
+    border: 1px solid rgba(100,130,200,0.15);
+    padding: 32px;
+}
+
+.log-panel h3 { margin-bottom: 20px; font-family: 'Outfit', sans-serif; color: #2d3a5c; }
+.log-panel .eyebrow { color: var(--muted); }
+
+.quality-stars {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.star-btn {
+    font-size: 1.8rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    filter: grayscale(1);
+    transition: all 0.15s;
+    padding: 0;
+    line-height: 1;
+}
+
+.star-btn.active, .star-btn:hover {
+    filter: grayscale(0);
+    transform: scale(1.1);
+}
+
+.selected-times-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.time-badge {
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8ecff 100%);
+    border: 1px solid rgba(102,126,234,0.25);
+    border-radius: 14px;
+    padding: 14px 16px;
+    text-align: center;
+}
+
+.time-badge .tb-label { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; }
+.time-badge .tb-value { font-size: 1.4rem; font-weight: 700; color: #2d3a5c; font-family: 'Outfit', sans-serif; }
+
+/* Graph Section */
+.graph-section {
+    background: #fff;
+    border-radius: 24px;
+    border: 1px solid rgba(100,130,200,0.15);
+    padding: 32px;
+    margin-bottom: 28px;
+}
+
+.graph-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.line-graph-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+/* History section */
+.sleep-history {
+    background: #fff;
+    border-radius: 24px;
+    border: 1px solid rgba(100,130,200,0.15);
+    padding: 32px;
+}
+</style>
+
+<!-- ── Sleep BG Decorations ── -->
+<div class="sleep-bg-decor" id="sleep-bg-decor"></div>
+<div class="moon-crescent-bg"></div>
+
+<!-- ── Hero ── -->
+<div class="sleep-hero">
+    <div class="stars" id="stars-container"></div>
+    <p class="eyebrow" style="color: rgba(255,255,255,0.45); font-size:0.72rem; letter-spacing:2px; text-transform:uppercase;">CogniSpace · Sleep</p>
+    <h1>🌙 Sleep Tracker</h1>
+    <p class="lead">{{ sleep_context["summary"]["weekly_story"] }}</p>
+    <div class="moon-icon">🌙</div>
+</div>
+
+<!-- ── Stats Row ── -->
+<div class="sleep-stats-row">
+    <div class="stat-card">
+        <div class="stat-icon">⏱️</div>
+        <div class="stat-value">{{ sleep_context["summary"]["average_duration"] }}</div>
+        <div class="stat-label">Avg Hours</div>
+        <div class="stat-sub">recent 7 nights</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-value">{{ sleep_context["summary"]["average_quality"] }}</div>
+        <div class="stat-label">Avg Quality</div>
+        <div class="stat-sub">out of 5</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-value" style="font-size:1.1rem; padding-top: 6px;">{{ sleep_context["summary"]["consistency"] }}</div>
+        <div class="stat-label">Consistency</div>
+        <div class="stat-sub">based on duration spread</div>
+    </div>
+</div>
+
+<!-- ── Two-Col: Clock Picker + Log Form ── -->
+<div class="sleep-two-col">
+
+    <!-- Clock Picker -->
+    <div class="clock-panel">
+        <p class="eyebrow">Set time</p>
+        <h3>Pick your times</h3>
+
+        <div class="clock-tabs">
+            <div class="clock-tab active" id="tab-bed" onclick="switchTab('bed')">🌙 Bedtime</div>
+            <div class="clock-tab" id="tab-wake" onclick="switchTab('wake')">☀️ Wake time</div>
+        </div>
+
+        <div class="clock-face-wrapper">
+            <div class="clock-face" id="clock-face">
+                <div class="clock-center">
+                    <div class="clock-time-display" id="clock-display">10:30</div>
+                    <div class="clock-ampm-display" id="clock-ampm">PM</div>
+                </div>
+                <!-- ticks generated by JS -->
+            </div>
+
+            <div class="time-sliders">
+                <div class="slider-row">
+                    <label>HR</label>
+                    <input type="range" id="hr-slider" min="1" max="12" value="10" oninput="updateClock()">
+                    <span class="val-label" id="hr-val">10</span>
+                </div>
+                <div class="slider-row">
+                    <label>MIN</label>
+                    <input type="range" id="min-slider" min="0" max="59" value="30" oninput="updateClock()">
+                    <span class="val-label" id="min-val">30</span>
+                </div>
+                <div class="ampm-toggle">
+                    <button class="ampm-btn" id="am-btn" onclick="setAmPm('AM')">AM</button>
+                    <button class="ampm-btn active" id="pm-btn" onclick="setAmPm('PM')">PM</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Form -->
+    <div class="log-panel">
+        <p class="eyebrow">Log sleep</p>
+        <h3>Daily sleep reflection</h3>
+        <form method="post" class="stack-form" id="sleep-form">
+            <input type="hidden" name="bedtime" id="bedtime-hidden" value="">
+            <input type="hidden" name="wake_time" id="wake_time-hidden" value="">
+
+            <label for="sleep_date">Date</label>
+            <input id="sleep_date" name="sleep_date" type="date" value="{{ today_iso }}" required>
+
+            <div class="selected-times-row">
+                <div class="time-badge">
+                    <div class="tb-label">🌙 Bedtime</div>
+                    <div class="tb-value" id="bed-display">--:--</div>
+                </div>
+                <div class="time-badge">
+                    <div class="tb-label">☀️ Wake Time</div>
+                    <div class="tb-value" id="wake-display">--:--</div>
+                </div>
+            </div>
+
+            <label>Sleep quality</label>
+            <div class="quality-stars" id="star-rating">
+                <button type="button" class="star-btn" data-val="1" onclick="setStar(1)">😴</button>
+                <button type="button" class="star-btn" data-val="2" onclick="setStar(2)">😪</button>
+                <button type="button" class="star-btn" data-val="3" onclick="setStar(3)">😐</button>
+                <button type="button" class="star-btn" data-val="4" onclick="setStar(4)">😊</button>
+                <button type="button" class="star-btn" data-val="5" onclick="setStar(5)">🌟</button>
+            </div>
+            <input type="hidden" name="quality_rating" id="quality-hidden" value="3">
+
+            <label for="sleep_note">Optional note</label>
+            <textarea id="sleep_note" name="note" rows="3" placeholder="Anything that affected your sleep?"></textarea>
+
+            <button type="submit" onclick="return confirmSave()">Save sleep log</button>
+        </form>
+    </div>
+</div>
+
+<!-- ── Line Graph ── -->
+<div class="graph-section">
+    <div class="graph-header">
+        <div>
+            <p class="eyebrow" style="color:var(--muted); font-size:0.72rem; letter-spacing:2px; text-transform:uppercase;">Monthly tracker</p>
+            <h3 style="font-family:'Outfit',sans-serif; color:#2d3a5c; margin:0;">Sleep hours this month</h3>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; font-size:0.8rem; color:var(--muted);">
+            <span>5h ─ 10h scale</span>
+        </div>
+    </div>
+    <div class="line-graph-container">
+        <svg width="100%" height="auto" viewBox="0 0 700 250" class="sleep-line-graph" style="overflow: visible;">
+            <!-- Y Axis Label -->
+            <text x="15" y="125" text-anchor="middle" font-family="Outfit" font-size="11" fill="#888" transform="rotate(-90, 15, 125)" letter-spacing="2">HOURS</text>
+
+            <!-- Horizontal grid lines -->
+            <line x1="60" y1="20" x2="680" y2="20" stroke="rgba(0,0,0,0.04)" stroke-width="1"/>
+            <line x1="60" y1="60" x2="680" y2="60" stroke="rgba(0,0,0,0.04)" stroke-width="1"/>
+            <line x1="60" y1="100" x2="680" y2="100" stroke="rgba(0,0,0,0.04)" stroke-width="1"/>
+            <line x1="60" y1="140" x2="680" y2="140" stroke="rgba(0,0,0,0.04)" stroke-width="1"/>
+            <line x1="60" y1="180" x2="680" y2="180" stroke="rgba(0,0,0,0.04)" stroke-width="1"/>
+            <line x1="60" y1="220" x2="680" y2="220" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
+
+            <!-- Axes -->
+            <line x1="60" y1="20" x2="60" y2="220" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
+
+            <!-- Y-Axis Ticks -->
+            <text x="50" y="220" text-anchor="end" dominant-baseline="central" font-size="10" fill="#999">5</text>
+            <text x="50" y="180" text-anchor="end" dominant-baseline="central" font-size="10" fill="#999">6</text>
+            <text x="50" y="140" text-anchor="end" dominant-baseline="central" font-size="10" fill="#999">7</text>
+            <text x="50" y="100" text-anchor="end" dominant-baseline="central" font-size="10" fill="#999">8</text>
+            <text x="50" y="60"  text-anchor="end" dominant-baseline="central" font-size="10" fill="#999">9</text>
+            <text x="50" y="20"  text-anchor="end" dominant-baseline="central" font-size="10" fill="#999">10</text>
+
+            <!-- Recommended sleep zone shading -->
+            <rect x="60" y="100" width="620" height="80" fill="rgba(102,126,234,0.06)" rx="0"/>
+
+            <!-- Line Path -->
+            {% if sleep_context["graph_path"] %}
+            <path d="{{ sleep_context['graph_path'] }}" fill="none" stroke="#667eea" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            {% endif %}
+
+            <!-- Points and X-Axis -->
+            {% for point in sleep_context["graph_points"] %}
+            <text x="{{ point.x }}" y="234" text-anchor="middle" font-size="8" fill="#aaa">{{ point.day }}</text>
+            <line x1="{{ point.x }}" y1="220" x2="{{ point.x }}" y2="224" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+
+            {% if point.has_data %}
+            <circle cx="{{ point.x }}" cy="{{ point.y }}" r="5" fill="#667eea" stroke="#fff" stroke-width="2" style="cursor:pointer;">
+                <title>Day {{ point.day }}: {{ point.hours }} hrs · Quality {{ point.quality }}/5{% if point.note %} · {{ point.note }}{% endif %}</title>
+            </circle>
+            {% endif %}
+            {% endfor %}
+
+            <!-- X Label -->
+            <text x="370" y="248" text-anchor="middle" font-family="Outfit" font-size="11" fill="#aaa" letter-spacing="2">DATE</text>
+        </svg>
+    </div>
+    <div style="display:flex; gap:16px; margin-top:16px; font-size:0.78rem; color:var(--muted); align-items:center;">
+        <span style="display:flex; align-items:center; gap:6px;">
+            <span style="width:24px;height:3px;background:#667eea;border-radius:2px;display:inline-block;"></span>
+            Sleep hours
+        </span>
+        <span style="display:flex; align-items:center; gap:6px;">
+            <span style="width:24px;height:12px;background:rgba(102,126,234,0.1);border-radius:3px;display:inline-block;"></span>
+            Recommended zone (7–8h)
+        </span>
+    </div>
+</div>
+
+<!-- ── Insights ── -->
+<div style="background: linear-gradient(135deg, #f0f4ff 0%, #e8ecff 100%); border: 1px solid rgba(102,126,234,0.2); border-radius: 24px; padding: 28px; margin-bottom: 28px;">
+    <p class="eyebrow" style="color:#667eea; font-size:0.72rem; letter-spacing:2px; text-transform:uppercase; margin-bottom: 12px;">Sleep insights</p>
+    <ul class="insight-list" style="margin:0; padding-left:20px; line-height:1.9; color:#2d3a5c;">
+        {% for item in sleep_context["insights"] %}
+        <li>{{ item }}</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- ── History ── -->
+<div class="sleep-history">
+    <p class="eyebrow" style="color:var(--muted); font-size:0.72rem; letter-spacing:2px; text-transform:uppercase; margin-bottom:12px;">History</p>
+    <h3 style="font-family:'Outfit',sans-serif; color:#2d3a5c; margin-bottom: 20px;">Recent nights</h3>
+    <div class="feed-list">
+        {% for log in sleep_logs %}
+        <article class="feed-card" style="border-left: 3px solid #667eea;">
+            <div class="badge-row">
+                <span class="badge">{{ log["sleep_date"]|display_date }}</span>
+                <span class="badge soft" style="background: rgba(102,126,234,0.12); border-color: rgba(102,126,234,0.2);">{{ log["duration_hours"] }} hrs</span>
+                <span class="badge soft">⭐ {{ log["quality_rating"] }}/5</span>
+            </div>
+            <p>Bedtime {{ log["bedtime"] }} · Wake {{ log["wake_time"] }}</p>
+            <small>{{ log["note"] or "No additional note for this night." }}</small>
+        </article>
+        {% else %}
+        <div class="empty-state" style="text-align:center; padding: 40px; color: var(--muted);">
+            🌙 Your sleep history will appear here after your first log.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+// ── Stars in hero ──────────────────────────────────────────────────────────
+(function() {
+    const c = document.getElementById('stars-container');
+    for (let i = 0; i < 40; i++) {
+        const s = document.createElement('div');
+        s.className = 'star';
+        const size = Math.random() * 3 + 1;
+        s.style.cssText = `width:${size}px;height:${size}px;top:${Math.random()*100}%;left:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*3}s;`;
+        c.appendChild(s);
+    }
+})();
+
+// ── Clock logic ────────────────────────────────────────────────────────────
+let currentTab = 'bed';
+let bedTime = { h: 10, m: 30, ampm: 'PM' };
+let wakeTime = { h: 6, m: 30, ampm: 'AM' };
+
+function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('tab-bed').classList.toggle('active', tab === 'bed');
+    document.getElementById('tab-wake').classList.toggle('active', tab === 'wake');
+
+    const t = tab === 'bed' ? bedTime : wakeTime;
+    document.getElementById('hr-slider').value = t.h;
+    document.getElementById('min-slider').value = t.m;
+    setAmPmUI(t.ampm);
+    renderClockHands(t.h, t.m);
+    updateDisplays();
+}
+
+function setAmPm(val) {
+    if (currentTab === 'bed') bedTime.ampm = val;
+    else wakeTime.ampm = val;
+    setAmPmUI(val);
+    updateDisplays();
+}
+
+function setAmPmUI(val) {
+    document.getElementById('am-btn').classList.toggle('active', val === 'AM');
+    document.getElementById('pm-btn').classList.toggle('active', val === 'PM');
+    document.getElementById('clock-ampm').textContent = val;
+}
+
+function updateClock() {
+    const h = parseInt(document.getElementById('hr-slider').value);
+    const m = parseInt(document.getElementById('min-slider').value);
+    document.getElementById('hr-val').textContent = h;
+    document.getElementById('min-val').textContent = m.toString().padStart(2, '0');
+
+    if (currentTab === 'bed') { bedTime.h = h; bedTime.m = m; }
+    else { wakeTime.h = h; wakeTime.m = m; }
+
+    renderClockHands(h, m);
+    updateDisplays();
+}
+
+function renderClockHands(h, m) {
+    const hourDeg = (h % 12) * 30 + m * 0.5;
+    const minDeg = m * 6;
+    document.querySelector('.clock-hour-hand').style.transform = `rotate(${hourDeg}deg)`;
+    document.querySelector('.clock-minute-hand').style.transform = `rotate(${minDeg}deg)`;
+
+    const hStr = h.toString().padStart(2, '0');
+    const mStr = m.toString().padStart(2, '0');
+    document.getElementById('clock-display').textContent = `${hStr}:${mStr}`;
+}
+
+function updateDisplays() {
+    const fmt = (t) => {
+        const hStr = t.h.toString().padStart(2, '0');
+        const mStr = t.m.toString().padStart(2, '0');
+        return `${hStr}:${mStr} ${t.ampm}`;
+    };
+    const to24 = (t) => {
+        let h = t.h;
+        if (t.ampm === 'AM' && h === 12) h = 0;
+        if (t.ampm === 'PM' && h !== 12) h += 12;
+        return `${h.toString().padStart(2,'0')}:${t.m.toString().padStart(2,'0')}`;
+    };
+
+    document.getElementById('bed-display').textContent = fmt(bedTime);
+    document.getElementById('wake-display').textContent = fmt(wakeTime);
+    document.getElementById('bedtime-hidden').value = to24(bedTime);
+    document.getElementById('wake_time-hidden').value = to24(wakeTime);
+}
+
+// Build clock face
+(function buildClock() {
+    const face = document.getElementById('clock-face');
+    const size = 260; // must match .clock-face width/height in CSS
+    const center = size / 2;   // 130px
+    const numRadius = 104;      // px from center — outer ring, clear of hands
+
+    // Hour hand
+    const hourHand = document.createElement('div');
+    hourHand.className = 'clock-hour-hand';
+    face.appendChild(hourHand);
+
+    // Minute hand
+    const minHand = document.createElement('div');
+    minHand.className = 'clock-minute-hand';
+    face.appendChild(minHand);
+
+    // Center dot
+    const dot = document.createElement('div');
+    dot.className = 'clock-dot';
+    face.appendChild(dot);
+
+    // NOTE: clock-center (time display) already exists in HTML — do NOT create a duplicate.
+
+    // Tick marks (60 ticks, major every 5)
+    for (let i = 0; i < 60; i++) {
+        const tick = document.createElement('div');
+        tick.className = i % 5 === 0 ? 'clock-tick major' : 'clock-tick';
+        tick.style.transform = `rotate(${i * 6}deg)`;
+        face.appendChild(tick);
+    }
+
+    // Hour numbers — pixel-precise placement on outer ring
+    for (let i = 1; i <= 12; i++) {
+        const angle = (i * 30 - 90) * Math.PI / 180;
+        const px = center + numRadius * Math.cos(angle);  // px from left
+        const py = center + numRadius * Math.sin(angle);  // px from top
+        const num = document.createElement('div');
+        num.className = 'clock-num';
+        num.textContent = i;
+        // position: left/top are the element centre (offset by half of 24px box)
+        num.style.left = (px - 12) + 'px';
+        num.style.top  = (py - 12) + 'px';
+        face.appendChild(num);
+    }
+})();
+
+// ── Wake/bed theme switch ──────────────────────────────────────────────────
+function applyTheme(tab) {
+    const panel = document.querySelector('.clock-panel');
+    const face  = document.getElementById('clock-face');
+    if (tab === 'wake') {
+        panel.classList.add('wake-mode');
+        face.classList.add('wake-mode');
+    } else {
+        panel.classList.remove('wake-mode');
+        face.classList.remove('wake-mode');
+    }
+}
+
+// Patch switchTab to also apply theme
+const _origSwitch = switchTab;
+switchTab = function(tab) {
+    _origSwitch(tab);
+    applyTheme(tab);
+};
+applyTheme('bed');
+
+// ── Background stars + ZZZ ─────────────────────────────────────────────────
+(function buildBg() {
+    const decor = document.getElementById('sleep-bg-decor');
+    // Tiny bg stars
+    for (let i = 0; i < 60; i++) {
+        const s = document.createElement('div');
+        s.className = 'star-bg';
+        const sz = Math.random() * 2.5 + 0.8;
+        s.style.cssText = `width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;animation-delay:${Math.random()*4}s;animation-duration:${3+Math.random()*4}s;`;
+        decor.appendChild(s);
+    }
+    // Floating ZZZ
+    const zzTexts = ['Z', 'z', 'ZZ', 'Zzz'];
+    for (let i = 0; i < 8; i++) {
+        const z = document.createElement('div');
+        z.className = 'zzz-float';
+        z.textContent = zzTexts[Math.floor(Math.random()*zzTexts.length)];
+        const sz = 24 + Math.random() * 48;
+        z.style.cssText = `font-size:${sz}px;left:${5+Math.random()*90}%;top:${10+Math.random()*80}%;animation-duration:${8+Math.random()*8}s;animation-delay:${Math.random()*6}s;`;
+        decor.appendChild(z);
+    }
+})();
+
+// ── Star rating ────────────────────────────────────────────────────────────
+let currentStar = 3;
+function setStar(val) {
+    currentStar = val;
+    document.getElementById('quality-hidden').value = val;
+    document.querySelectorAll('.star-btn').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.val) <= val);
+    });
+}
+setStar(3);
+
+// ── Save validation ────────────────────────────────────────────────────────
+function confirmSave() {
+    const bed = document.getElementById('bedtime-hidden').value;
+    const wake = document.getElementById('wake_time-hidden').value;
+    if (!bed || !wake) {
+        alert('Please set your bedtime and wake time using the clock.');
+        return false;
+    }
+    return true;
+}
+
+// Init
+updateDisplays();
+renderClockHands(10, 30);
+setStar(3);
+</script>
+
+{% endblock %}

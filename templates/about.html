@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% set title = "About" %}
+{% block content %}
+<section class="hero-card">
+    <p class="eyebrow">About the app</p>
+    <h1>{{ app_brand }}</h1>
+    <h2>{{ app_subtitle }}</h2>
+    <p class="lead">LumaNest is an AI-powered journaling and wellness platform designed to help people notice emotional patterns, sleep rhythms, and supportive habits. It uses natural language processing to understand reflections, surface meaningful trends, and offer gentle suggestions in plain English. The goal is not to judge or diagnose, but to support awareness with warmth and clarity.</p>
+    <div class="mini-grid">
+        <div class="mini-panel">
+            <strong>Multilingual input</strong>
+            <p>Write or speak in the language that feels natural to you.</p>
+        </div>
+        <div class="mini-panel">
+            <strong>English guidance</strong>
+            <p>All insights, analysis, and system messages stay in simple English.</p>
+        </div>
+        <div class="mini-panel">
+            <strong>Personal history</strong>
+            <p>Your profile keeps mood, sleep, habits, and journal analytics together.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}
